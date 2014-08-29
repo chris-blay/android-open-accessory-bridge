@@ -16,13 +16,6 @@
 
 package com.covertbagel.androidopenaccessorybridge;
 
-import java.io.Closeable;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.usb.UsbAccessory;
@@ -32,6 +25,13 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+
+import java.io.Closeable;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class AndroidOpenAccessoryBridge {
 
@@ -51,7 +51,9 @@ public class AndroidOpenAccessoryBridge {
     private ParcelFileDescriptor mParcelFileDescriptor;
 
     public AndroidOpenAccessoryBridge(Context context, Listener listener) {
-        assert(context != null && listener != null);
+        if (BuildConfig.DEBUG && (context == null || listener == null)) {
+            throw new AssertionError("Arguments context and listener must not be null");
+        }
         mListener = listener;
         mUsbManager =
                 (UsbManager) context.getSystemService(Context.USB_SERVICE);
@@ -61,7 +63,9 @@ public class AndroidOpenAccessoryBridge {
     }
 
     public synchronized boolean write(BufferHolder bufferHolder) {
-        assert(!mIsShutdown && mOutputStream != null);
+        if (BuildConfig.DEBUG && (mIsShutdown || mOutputStream == null)) {
+            throw new AssertionError("Can't write if shutdown or output stream is null");
+        }
         return bufferHolder.write(mOutputStream);
     }
 
@@ -208,25 +212,34 @@ public class AndroidOpenAccessoryBridge {
 
         private boolean read(final FileInputStream inputStream) {
             if (size <= 0) {
+                final int bytesRead;
                 try {
-                    inputStream.read(mSizeBytes);
+                    bytesRead = inputStream.read(mSizeBytes);
                 } catch (IOException e) {
                     Log.d(TAG, "IOException while reading size bytes", e);
                     return false;
                 }
+                if (bytesRead != mSizeBytes.length) {
+                    Log.d(TAG, "Incorrect number of bytes read while reading size bytes");
+                    return false;
+                }
                 size = readSizeBytes();
             }
+            final int bytesRead;
             try {
-                inputStream.read(buffer.array(), 0, size);
+                bytesRead = inputStream.read(buffer.array(), 0, size);
             } catch (IOException e) {
                 Log.d(TAG, "IOException while reading data bytes", e);
+                return false;
+            }
+            if (bytesRead != size) {
+                Log.d(TAG, "Incorrect number of bytes read while reading data bytes");
                 return false;
             }
             return true;
         }
 
         private boolean write(final FileOutputStream outputStream) {
-            assert(size > 0);
             writeSizeBytes(size);
             try {
                 outputStream.write(mSizeBytes);
@@ -244,8 +257,11 @@ public class AndroidOpenAccessoryBridge {
         }
 
         private void writeSizeBytes(final int value) {
-            mSizeBytes[0] = (byte) ((value & 0x0000ff00) >> 8);
-            mSizeBytes[1] = (byte) (value & 0x000000ff);
+            if (BuildConfig.DEBUG && (value <= 0 || value > 0xffff)) {
+                throw new AssertionError("Size value out of bounds");
+            }
+            mSizeBytes[0] = (byte) ((value & 0xff00) >> 8);
+            mSizeBytes[1] = (byte) (value & 0x00ff);
         }
 
     }

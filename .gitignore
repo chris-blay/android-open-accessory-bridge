@@ -1,0 +1,7 @@
+.gradle/
+build/
+local.properties
+AndroidOpenAccessoryBridge/.idea/libraries/
+AndroidOpenAccessoryBridge/.idea/misc.xml
+AndroidOpenAccessoryBridge/.idea/tasks.xml
+AndroidOpenAccessoryBridge/.idea/workspace.xml

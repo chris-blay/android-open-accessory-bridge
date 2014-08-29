@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.covertbagel.androidopenaccessorybridge;
+package com.covertbagel.androidopenaccessorybridge.demo;
 
 import android.app.Activity;
 import android.os.Bundle;
 
+import com.covertbagel.androidopenaccessorybridge.AndroidOpenAccessoryBridge;
 import com.covertbagel.androidopenaccessorybridge.AndroidOpenAccessoryBridge.BufferHolder;
 
 public class MainActivity extends Activity
