@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Christopher Blay <chris.b.blay@gmail.com>
+ * Copyright 2015 Christopher Blay <chris.b.blay@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.covertbagel.androidopenaccessorybridge;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
@@ -31,15 +30,12 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 public class AndroidOpenAccessoryBridge {
 
-    private static final String TAG =
-            AndroidOpenAccessoryBridge.class.getSimpleName();
+    private static final String TAG = AndroidOpenAccessoryBridge.class.getSimpleName();
     private static final long CONNECT_COOLDOWN_MS = 100;
     private static final long READ_COOLDOWN_MS = 100;
-
     private Listener mListener;
     private UsbManager mUsbManager;
     private BufferHolder mReadBuffer;
@@ -55,8 +51,7 @@ public class AndroidOpenAccessoryBridge {
             throw new AssertionError("Arguments context and listener must not be null");
         }
         mListener = listener;
-        mUsbManager =
-                (UsbManager) context.getSystemService(Context.USB_SERVICE);
+        mUsbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         mReadBuffer = new BufferHolder();
         mInternalThread = new InternalThread();
         mInternalThread.start();
@@ -69,7 +64,7 @@ public class AndroidOpenAccessoryBridge {
         return bufferHolder.write(mOutputStream);
     }
 
-    @SuppressLint("HandlerLeak")
+
     private class InternalThread extends Thread {
 
         private static final int STOP_THREAD = 1;
@@ -97,8 +92,7 @@ public class AndroidOpenAccessoryBridge {
                                 mHandler.sendEmptyMessage(MAYBE_READ);
                             }
                         } else {
-                            mHandler.sendEmptyMessageDelayed(
-                                    MAYBE_READ, READ_COOLDOWN_MS);
+                            mHandler.sendEmptyMessageDelayed(MAYBE_READ, READ_COOLDOWN_MS);
                         }
                         break;
                     }
@@ -129,13 +123,12 @@ public class AndroidOpenAccessoryBridge {
                 } catch (InterruptedException e) {
                     // pass
                 }
-                final UsbAccessory[] accessoryList =
-                        mUsbManager.getAccessoryList();
+                final UsbAccessory[] accessoryList = mUsbManager.getAccessoryList();
                 if (accessoryList == null || accessoryList.length == 0) {
                     continue;
                 }
                 if (accessoryList.length > 1) {
-                    Log.w(TAG, "Multiple accessories attached!? Trying first");
+                    Log.w(TAG, "Multiple accessories attached!? Using first one...");
                 }
                 maybeAttachAccessory(accessoryList[0]);
             }
@@ -186,84 +179,6 @@ public class AndroidOpenAccessoryBridge {
     public static interface Listener {
         public void onAoabRead(BufferHolder bufferHolder);
         public void onAoabShutdown();
-    }
-
-    public static final class BufferHolder {
-
-        private final byte[] mSizeBytes;
-
-        public final ByteBuffer buffer;
-        public int size;
-
-        public BufferHolder() {
-            mSizeBytes = new byte[2];
-            buffer = ByteBuffer.allocate(65535);
-        }
-
-        public void reset() {
-            buffer.clear();
-            size = 0;
-        }
-
-        @Override
-        public String toString() {
-            return new String(buffer.array(), 0, size);
-        }
-
-        private boolean read(final FileInputStream inputStream) {
-            if (size <= 0) {
-                final int bytesRead;
-                try {
-                    bytesRead = inputStream.read(mSizeBytes);
-                } catch (IOException e) {
-                    Log.d(TAG, "IOException while reading size bytes", e);
-                    return false;
-                }
-                if (bytesRead != mSizeBytes.length) {
-                    Log.d(TAG, "Incorrect number of bytes read while reading size bytes");
-                    return false;
-                }
-                size = readSizeBytes();
-            }
-            final int bytesRead;
-            try {
-                bytesRead = inputStream.read(buffer.array(), 0, size);
-            } catch (IOException e) {
-                Log.d(TAG, "IOException while reading data bytes", e);
-                return false;
-            }
-            if (bytesRead != size) {
-                Log.d(TAG, "Incorrect number of bytes read while reading data bytes");
-                return false;
-            }
-            return true;
-        }
-
-        private boolean write(final FileOutputStream outputStream) {
-            writeSizeBytes(size);
-            try {
-                outputStream.write(mSizeBytes);
-                outputStream.write(buffer.array(), 0, size);
-                outputStream.flush();
-                return true;
-            } catch (IOException e) {
-                Log.d(TAG, "IOException while writing size+data bytes", e);
-                return false;
-            }
-        }
-
-        private int readSizeBytes() {
-            return ((mSizeBytes[0] & 0xff) << 8) | (mSizeBytes[1] & 0xff);
-        }
-
-        private void writeSizeBytes(final int value) {
-            if (BuildConfig.DEBUG && (value <= 0 || value > 0xffff)) {
-                throw new AssertionError("Size value out of bounds");
-            }
-            mSizeBytes[0] = (byte) ((value & 0xff00) >> 8);
-            mSizeBytes[1] = (byte) (value & 0x00ff);
-        }
-
     }
 
 }

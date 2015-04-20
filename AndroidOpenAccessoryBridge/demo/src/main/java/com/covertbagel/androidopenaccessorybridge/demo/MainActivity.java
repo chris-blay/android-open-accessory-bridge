@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Christopher Blay <chris.b.blay@gmail.com>
+ * Copyright 2015 Christopher Blay <chris.b.blay@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import android.app.Activity;
 import android.os.Bundle;
 
 import com.covertbagel.androidopenaccessorybridge.AndroidOpenAccessoryBridge;
-import com.covertbagel.androidopenaccessorybridge.AndroidOpenAccessoryBridge.BufferHolder;
+import com.covertbagel.androidopenaccessorybridge.BufferHolder;
 
 public class MainActivity extends Activity
         implements AndroidOpenAccessoryBridge.Listener {
