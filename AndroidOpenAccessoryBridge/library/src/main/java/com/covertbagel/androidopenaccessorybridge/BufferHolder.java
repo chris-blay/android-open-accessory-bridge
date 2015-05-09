@@ -35,7 +35,7 @@ public class BufferHolder {
         buffer = ByteBuffer.allocate(0xffff);
     }
 
-    void reset() {
+    public void reset() {
         buffer.clear();
         size = 0;
     }
