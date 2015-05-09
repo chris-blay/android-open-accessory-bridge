@@ -22,8 +22,7 @@ import android.os.Bundle;
 import com.covertbagel.androidopenaccessorybridge.AndroidOpenAccessoryBridge;
 import com.covertbagel.androidopenaccessorybridge.BufferHolder;
 
-public class MainActivity extends Activity
-        implements AndroidOpenAccessoryBridge.Listener {
+public class MainActivity extends Activity implements AndroidOpenAccessoryBridge.Listener {
 
     private AndroidOpenAccessoryBridge mAoab;
 

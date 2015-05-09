@@ -46,7 +46,7 @@ public class AndroidOpenAccessoryBridge {
     private FileInputStream mInputStream;
     private ParcelFileDescriptor mParcelFileDescriptor;
 
-    public AndroidOpenAccessoryBridge(Context context, Listener listener) {
+    public AndroidOpenAccessoryBridge(final Context context, final Listener listener) {
         if (BuildConfig.DEBUG && (context == null || listener == null)) {
             throw new AssertionError("Arguments context and listener must not be null");
         }
@@ -57,13 +57,12 @@ public class AndroidOpenAccessoryBridge {
         mInternalThread.start();
     }
 
-    public synchronized boolean write(BufferHolder bufferHolder) {
+    public synchronized boolean write(final BufferHolder bufferHolder) {
         if (BuildConfig.DEBUG && (mIsShutdown || mOutputStream == null)) {
             throw new AssertionError("Can't write if shutdown or output stream is null");
         }
         return bufferHolder.write(mOutputStream);
     }
-
 
     private class InternalThread extends Thread {
 
@@ -120,7 +119,7 @@ public class AndroidOpenAccessoryBridge {
                 }
                 try {
                     Thread.sleep(CONNECT_COOLDOWN_MS);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException exception) {
                     // pass
                 }
                 final UsbAccessory[] accessoryList = mUsbManager.getAccessoryList();
@@ -135,11 +134,9 @@ public class AndroidOpenAccessoryBridge {
         }
 
         private void maybeAttachAccessory(final UsbAccessory accessory) {
-            final ParcelFileDescriptor parcelFileDescriptor =
-                    mUsbManager.openAccessory(accessory);
+            final ParcelFileDescriptor parcelFileDescriptor = mUsbManager.openAccessory(accessory);
             if (parcelFileDescriptor != null) {
-                final FileDescriptor fileDescriptor =
-                        parcelFileDescriptor.getFileDescriptor();
+                final FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
                 mIsAttached = true;
                 mOutputStream = new FileOutputStream(fileDescriptor);
                 mInputStream = new FileInputStream(fileDescriptor);
@@ -169,16 +166,16 @@ public class AndroidOpenAccessoryBridge {
         private void closeQuietly(Closeable closable) {
             try {
                 closable.close();
-            } catch (IOException e) {
+            } catch (IOException exception) {
                 // pass
             }
         }
 
     }
 
-    public static interface Listener {
-        public void onAoabRead(BufferHolder bufferHolder);
-        public void onAoabShutdown();
+    public interface Listener {
+        void onAoabRead(BufferHolder bufferHolder);
+        void onAoabShutdown();
     }
 
 }
