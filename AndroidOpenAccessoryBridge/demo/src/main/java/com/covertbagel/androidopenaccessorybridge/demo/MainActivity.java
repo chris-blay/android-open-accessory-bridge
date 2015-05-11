@@ -18,6 +18,7 @@ package com.covertbagel.androidopenaccessorybridge.demo;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.widget.TextView;
 
 import com.covertbagel.androidopenaccessorybridge.AndroidOpenAccessoryBridge;
 import com.covertbagel.androidopenaccessorybridge.BufferHolder;
@@ -25,12 +26,14 @@ import com.covertbagel.androidopenaccessorybridge.BufferHolder;
 public class MainActivity extends Activity implements AndroidOpenAccessoryBridge.Listener {
 
     private AndroidOpenAccessoryBridge mAoab;
+    private TextView mTextView;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mAoab = new AndroidOpenAccessoryBridge(this, this);
+        mTextView = (TextView) findViewById(R.id.text_view);
     }
 
     @Override
@@ -42,7 +45,18 @@ public class MainActivity extends Activity implements AndroidOpenAccessoryBridge
     // AndroidOpenAccessoryBridge.Listener
 
     @Override
-    public void onAoabRead(BufferHolder bufferHolder) {
+    public void onAoabRead(final BufferHolder bufferHolder) {
+        try {
+            final int value = Integer.parseInt(bufferHolder.toString());
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mTextView.setText(String.valueOf(value));
+                }
+            });
+        } catch (NumberFormatException exception) {
+            return;
+        }
         if (mAoab != null) {
             mAoab.write(bufferHolder);
         }
