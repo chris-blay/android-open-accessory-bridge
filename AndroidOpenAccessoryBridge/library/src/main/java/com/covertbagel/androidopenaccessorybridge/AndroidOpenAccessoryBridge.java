@@ -61,7 +61,12 @@ public class AndroidOpenAccessoryBridge {
         if (BuildConfig.DEBUG && (mIsShutdown || mOutputStream == null)) {
             throw new AssertionError("Can't write if shutdown or output stream is null");
         }
-        return bufferHolder.write(mOutputStream);
+        try {
+            return bufferHolder.write(mOutputStream);
+        } catch (IOException exception) {
+            mInternalThread.terminate();
+            return false;
+        }
     }
 
     private class InternalThread extends Thread {
@@ -82,7 +87,14 @@ public class AndroidOpenAccessoryBridge {
                         Looper.myLooper().quit();
                         break;
                     case MAYBE_READ:
-                        if (mReadBuffer.read(mInputStream)) {
+                        final boolean readResult;
+                        try {
+                            readResult = mReadBuffer.read(mInputStream);
+                        } catch (IOException exception) {
+                            terminate();
+                            break;
+                        }
+                        if (readResult) {
                             if (mReadBuffer.size == 0) {
                                 mHandler.sendEmptyMessage(STOP_THREAD);
                             } else {
@@ -109,6 +121,10 @@ public class AndroidOpenAccessoryBridge {
             mUsbManager = null;
             mReadBuffer = null;
             mInternalThread = null;
+        }
+
+        void terminate() {
+            mHandler.sendEmptyMessage(STOP_THREAD);
         }
 
         private void detectAccessory() {

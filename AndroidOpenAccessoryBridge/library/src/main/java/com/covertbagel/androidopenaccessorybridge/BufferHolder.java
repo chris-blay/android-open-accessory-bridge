@@ -16,6 +16,8 @@
 
 package com.covertbagel.androidopenaccessorybridge;
 
+import android.system.ErrnoException;
+import android.system.OsConstants;
 import android.util.Log;
 
 import java.io.FileInputStream;
@@ -45,12 +47,15 @@ public class BufferHolder {
         return new String(buffer.array(), 0, size);
     }
 
-    boolean read(final FileInputStream inputStream) {
+    boolean read(final FileInputStream inputStream) throws IOException {
         if (size <= 0) {
             final int bytesRead;
             try {
                 bytesRead = inputStream.read(mSizeBytes);
             } catch (IOException exception) {
+                if (ioExceptionIsNoSuchDevice(exception)) {
+                    throw exception;
+                }
                 Log.d(TAG, "IOException while reading size bytes", exception);
                 return false;
             }
@@ -65,6 +70,9 @@ public class BufferHolder {
         try {
             bytesRead = inputStream.read(buffer.array(), 0, size);
         } catch (IOException exception) {
+            if (ioExceptionIsNoSuchDevice(exception)) {
+                throw exception;
+            }
             Log.d(TAG, "IOException while reading data bytes", exception);
             return false;
         }
@@ -76,7 +84,7 @@ public class BufferHolder {
         return true;
     }
 
-    boolean write(final FileOutputStream outputStream) {
+    boolean write(final FileOutputStream outputStream) throws IOException {
         writeSizeBytes(size);
         try {
             outputStream.write(mSizeBytes);
@@ -84,6 +92,9 @@ public class BufferHolder {
             outputStream.flush();
             return true;
         } catch (IOException exception) {
+            if (ioExceptionIsNoSuchDevice(exception)) {
+                throw exception;
+            }
             Log.d(TAG, "IOException while writing size+data bytes", exception);
             return false;
         }
@@ -99,6 +110,15 @@ public class BufferHolder {
         }
         mSizeBytes[0] = (byte) ((value & 0xff00) >> 8);
         mSizeBytes[1] = (byte) (value & 0x00ff);
+    }
+
+    private boolean ioExceptionIsNoSuchDevice(IOException ioException) {
+        final Throwable cause = ioException.getCause();
+        if (cause instanceof ErrnoException) {
+            final ErrnoException errnoException = (ErrnoException) cause;
+            return errnoException.errno == OsConstants.ENODEV;
+        }
+        return false;
     }
 
 }
